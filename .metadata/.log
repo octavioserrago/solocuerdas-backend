@@ -1,0 +1,13 @@
+!SESSION 2026-01-19 18:49:40.420 -----------------------------------------------
+eclipse.buildId=4.38.0.20251204-0849
+java.version=21.0.2
+java.vendor=Oracle Corporation
+BootLoader constants: OS=macosx, ARCH=aarch64, WS=cocoa, NL=es_419
+Framework arguments:  -product org.eclipse.epp.package.java.product -keyring /Users/octavioserrago/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch aarch64 -product org.eclipse.epp.package.java.product -keyring /Users/octavioserrago/.eclipse_keyring
+
+!ENTRY ch.qos.logback.classic 1 0 2026-01-19 18:49:41.605
+!MESSAGE Activated before the state location was initialized. Retry after the state location is initialized.
+
+!ENTRY ch.qos.logback.classic 1 0 2026-01-19 18:49:57.452
+!MESSAGE Logback config file: /Users/octavioserrago/Downloads/solocuerdas-backend/.metadata/.plugins/org.eclipse.m2e.logback/logback.2.7.101.20251017-1242.xml
