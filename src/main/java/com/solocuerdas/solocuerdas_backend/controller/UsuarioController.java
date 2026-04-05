@@ -3,7 +3,11 @@ package com.solocuerdas.solocuerdas_backend.controller;
 import com.solocuerdas.solocuerdas_backend.dto.ChangePasswordRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginResponse;
+import com.solocuerdas.solocuerdas_backend.dto.SubscriptionPlanOptionResponse;
+import com.solocuerdas.solocuerdas_backend.dto.SubscriptionResponse;
 import com.solocuerdas.solocuerdas_backend.dto.UpdateProfileRequest;
+import com.solocuerdas.solocuerdas_backend.dto.UpdateSubscriptionPlanRequest;
+import com.solocuerdas.solocuerdas_backend.model.SubscriptionPlan;
 import com.solocuerdas.solocuerdas_backend.model.Usuario;
 import com.solocuerdas.solocuerdas_backend.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -164,5 +168,92 @@ public class UsuarioController {
     public ResponseEntity<Long> countUsers() {
         long count = usuarioService.countUsers();
         return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    /**
+     * GET USER SUBSCRIPTION
+     * GET /api/users/{id}/subscription
+     */
+    @GetMapping("/{id}/subscription")
+    public ResponseEntity<?> getSubscription(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            SubscriptionResponse response = usuarioService.getSubscription(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * LIST AVAILABLE SUBSCRIPTION PLANS
+     * GET /api/users/subscription/plans
+     */
+    @GetMapping("/subscription/plans")
+    public ResponseEntity<List<SubscriptionPlanOptionResponse>> getSubscriptionPlans() {
+        List<SubscriptionPlanOptionResponse> plans = usuarioService.getAvailableSubscriptionPlans();
+        return new ResponseEntity<>(plans, HttpStatus.OK);
+    }
+
+    /**
+     * UPDATE USER SUBSCRIPTION PLAN
+     * PUT /api/users/{id}/subscription/plan
+     * Body: { "plan": "SELLER_BASIC" } or "SELLER_PRO" or "FREE"
+     */
+    @PutMapping("/{id}/subscription/plan")
+    public ResponseEntity<?> updateSubscriptionPlan(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId,
+            @RequestBody UpdateSubscriptionPlanRequest request) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            SubscriptionPlan plan = request != null ? request.getPlan() : null;
+            SubscriptionResponse response = usuarioService.updateSubscriptionPlan(id, plan);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RENEW SUBSCRIPTION
+     * POST /api/users/{id}/subscription/renew
+     */
+    @PostMapping("/{id}/subscription/renew")
+    public ResponseEntity<?> renewSubscription(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            SubscriptionResponse response = usuarioService.renewSubscription(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * CANCEL SUBSCRIPTION (downgrade to FREE)
+     * POST /api/users/{id}/subscription/cancel
+     */
+    @PostMapping("/{id}/subscription/cancel")
+    public ResponseEntity<?> cancelSubscription(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            SubscriptionResponse response = usuarioService.cancelSubscription(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    private void validateOwnerRequest(Long targetUserId, Long requesterId) {
+        if (targetUserId == null || requesterId == null || !targetUserId.equals(requesterId)) {
+            throw new RuntimeException("You can only manage your own subscription");
+        }
     }
 }

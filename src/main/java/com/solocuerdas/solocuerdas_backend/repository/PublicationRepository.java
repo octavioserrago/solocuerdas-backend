@@ -50,6 +50,11 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
     long countByUserAndStatus(Usuario user, PublicationStatus status);
 
     /**
+     * Count publications by user ID and status
+     */
+    long countByUserIdAndStatus(Long userId, PublicationStatus status);
+
+    /**
      * Find all publications by category
      */
     List<Publication> findByCategory(Category category);

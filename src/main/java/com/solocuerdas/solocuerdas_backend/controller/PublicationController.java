@@ -1,10 +1,12 @@
 package com.solocuerdas.solocuerdas_backend.controller;
 
 import com.solocuerdas.solocuerdas_backend.dto.CreatePublicationRequest;
+import com.solocuerdas.solocuerdas_backend.dto.FavoriteStatusResponse;
 import com.solocuerdas.solocuerdas_backend.dto.PublicationResponse;
 import com.solocuerdas.solocuerdas_backend.dto.UpdatePublicationRequest;
 import com.solocuerdas.solocuerdas_backend.model.Category;
 import com.solocuerdas.solocuerdas_backend.model.PublicationStatus;
+import com.solocuerdas.solocuerdas_backend.service.FavoriteService;
 import com.solocuerdas.solocuerdas_backend.service.PublicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,9 @@ public class PublicationController {
 
     @Autowired
     private PublicationService publicationService;
+
+    @Autowired
+    private FavoriteService favoriteService;
 
     /**
      * CREATE PUBLICATION
@@ -115,6 +120,89 @@ public class PublicationController {
             @RequestHeader("X-User-Id") Long userId) {
         List<PublicationResponse> publications = publicationService.getMyPublications(userId);
         return new ResponseEntity<>(publications, HttpStatus.OK); // 200
+    }
+
+    /**
+     * ADD TO FAVORITES
+     * POST /api/publications/{id}/favorite
+     * Header: X-User-Id
+     */
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<?> addToFavorites(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            FavoriteStatusResponse response = favoriteService.addToFavorites(id, userId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * REMOVE FROM FAVORITES
+     * DELETE /api/publications/{id}/favorite
+     * Header: X-User-Id
+     */
+    @DeleteMapping("/{id}/favorite")
+    public ResponseEntity<?> removeFromFavorites(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            FavoriteStatusResponse response = favoriteService.removeFromFavorites(id, userId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * GET FAVORITE STATUS FOR AUTHENTICATED USER
+     * GET /api/publications/{id}/favorite/status
+     * Header: X-User-Id
+     */
+    @GetMapping("/{id}/favorite/status")
+    public ResponseEntity<?> getFavoriteStatus(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            FavoriteStatusResponse response = favoriteService.getFavoriteStatus(id, userId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * TOGGLE FAVORITE
+     * POST /api/publications/{id}/favorite/toggle
+     * Header: X-User-Id
+     */
+    @PostMapping("/{id}/favorite/toggle")
+    public ResponseEntity<?> toggleFavorite(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        try {
+            FavoriteStatusResponse response = favoriteService.toggleFavorite(id, userId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * GET MY FAVORITES
+     * GET /api/publications/my-favorites
+     * Header: X-User-Id
+     */
+    @GetMapping("/my-favorites")
+    public ResponseEntity<?> getMyFavorites(@RequestHeader("X-User-Id") Long userId) {
+        try {
+            List<PublicationResponse> favorites = favoriteService.getMyFavorites(userId);
+            return new ResponseEntity<>(favorites, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
     }
 
     /**

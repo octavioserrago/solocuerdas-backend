@@ -30,6 +30,25 @@ public class Usuario {
     @Column(name = "registration_date", nullable = false)
     private LocalDateTime registrationDate;
 
+    // ============ SUBSCRIPTION FIELDS ============
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subscription_plan", nullable = false, length = 20)
+    private SubscriptionPlan subscriptionPlan = SubscriptionPlan.FREE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subscription_status", nullable = false, length = 20)
+    private SubscriptionStatus subscriptionStatus = SubscriptionStatus.NONE;
+
+    @Column(name = "subscription_start_date")
+    private LocalDateTime subscriptionStartDate;
+
+    @Column(name = "subscription_end_date")
+    private LocalDateTime subscriptionEndDate;
+
+    @Column(name = "grace_period_end_date")
+    private LocalDateTime gracePeriodEndDate;
+
     // ============ ROLE AND PERMISSIONS ============
 
     @Enumerated(EnumType.STRING)
@@ -77,6 +96,8 @@ public class Usuario {
         this.password = password;
         this.registrationDate = LocalDateTime.now();
         this.role = Role.USER;
+        this.subscriptionPlan = SubscriptionPlan.FREE;
+        this.subscriptionStatus = SubscriptionStatus.NONE;
         this.isSuspended = false;
         this.isDeleted = false;
     }
@@ -91,6 +112,12 @@ public class Usuario {
         }
         if (role == null) {
             role = Role.USER;
+        }
+        if (subscriptionPlan == null) {
+            subscriptionPlan = SubscriptionPlan.FREE;
+        }
+        if (subscriptionStatus == null) {
+            subscriptionStatus = SubscriptionStatus.NONE;
         }
         if (isSuspended == null) {
             isSuspended = false;
@@ -148,6 +175,46 @@ public class Usuario {
 
     public void setRegistrationDate(LocalDateTime registrationDate) {
         this.registrationDate = registrationDate;
+    }
+
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
+    }
+
+    public SubscriptionStatus getSubscriptionStatus() {
+        return subscriptionStatus;
+    }
+
+    public void setSubscriptionStatus(SubscriptionStatus subscriptionStatus) {
+        this.subscriptionStatus = subscriptionStatus;
+    }
+
+    public LocalDateTime getSubscriptionStartDate() {
+        return subscriptionStartDate;
+    }
+
+    public void setSubscriptionStartDate(LocalDateTime subscriptionStartDate) {
+        this.subscriptionStartDate = subscriptionStartDate;
+    }
+
+    public LocalDateTime getSubscriptionEndDate() {
+        return subscriptionEndDate;
+    }
+
+    public void setSubscriptionEndDate(LocalDateTime subscriptionEndDate) {
+        this.subscriptionEndDate = subscriptionEndDate;
+    }
+
+    public LocalDateTime getGracePeriodEndDate() {
+        return gracePeriodEndDate;
+    }
+
+    public void setGracePeriodEndDate(LocalDateTime gracePeriodEndDate) {
+        this.gracePeriodEndDate = gracePeriodEndDate;
     }
 
     // Role

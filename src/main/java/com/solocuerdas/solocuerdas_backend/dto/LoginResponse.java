@@ -1,6 +1,8 @@
 package com.solocuerdas.solocuerdas_backend.dto;
 
 import com.solocuerdas.solocuerdas_backend.model.Role;
+import com.solocuerdas.solocuerdas_backend.model.SubscriptionPlan;
+import com.solocuerdas.solocuerdas_backend.model.SubscriptionStatus;
 import java.time.LocalDateTime;
 
 /**
@@ -15,6 +17,9 @@ public class LoginResponse {
     private String phone;
     private LocalDateTime registrationDate;
     private Role role;
+    private SubscriptionPlan subscriptionPlan;
+    private SubscriptionStatus subscriptionStatus;
+    private LocalDateTime subscriptionEndDate;
     private Boolean isSuspended;
     private Boolean isDeleted;
 
@@ -24,6 +29,8 @@ public class LoginResponse {
 
     public LoginResponse(Long id, String name, String email, String phone,
             LocalDateTime registrationDate, Role role,
+            SubscriptionPlan subscriptionPlan, SubscriptionStatus subscriptionStatus,
+            LocalDateTime subscriptionEndDate,
             Boolean isSuspended, Boolean isDeleted) {
         this.id = id;
         this.name = name;
@@ -31,6 +38,9 @@ public class LoginResponse {
         this.phone = phone;
         this.registrationDate = registrationDate;
         this.role = role;
+        this.subscriptionPlan = subscriptionPlan;
+        this.subscriptionStatus = subscriptionStatus;
+        this.subscriptionEndDate = subscriptionEndDate;
         this.isSuspended = isSuspended;
         this.isDeleted = isDeleted;
     }
@@ -82,6 +92,30 @@ public class LoginResponse {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
+    }
+
+    public SubscriptionStatus getSubscriptionStatus() {
+        return subscriptionStatus;
+    }
+
+    public void setSubscriptionStatus(SubscriptionStatus subscriptionStatus) {
+        this.subscriptionStatus = subscriptionStatus;
+    }
+
+    public LocalDateTime getSubscriptionEndDate() {
+        return subscriptionEndDate;
+    }
+
+    public void setSubscriptionEndDate(LocalDateTime subscriptionEndDate) {
+        this.subscriptionEndDate = subscriptionEndDate;
     }
 
     public Boolean getIsSuspended() {

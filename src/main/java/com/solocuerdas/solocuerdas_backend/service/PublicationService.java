@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +37,11 @@ public class PublicationService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int MAX_IMAGES = 5;
+    private static final int FREE_LIMIT = 2;
+    private static final int BASIC_LIMIT = 10;
+    private static final int PRO_LIMIT = 30;
+    private static final int UNLIMITED_LIMIT = -1;
+    private static final int GRACE_DAYS = 5;
 
     /**
      * CREATE PUBLICATION
@@ -201,6 +207,11 @@ public class PublicationService {
             throw new RuntimeException("You don't have permission to change this publication status");
         }
 
+        // Prevent bypassing plan limits by reactivating old publications.
+        if (newStatus == PublicationStatus.ACTIVE && publication.getStatus() != PublicationStatus.ACTIVE) {
+            validatePublicationLimit(publication.getUser());
+        }
+
         publication.setStatus(newStatus);
         if (newStatus == PublicationStatus.SOLD) {
             publication.markAsSold();
@@ -302,25 +313,91 @@ public class PublicationService {
      * Validate publication limit based on user role
      */
     private void validatePublicationLimit(Usuario user) {
-        long activePublications = publicationRepository.countByUserAndStatus(user, PublicationStatus.ACTIVE);
+        normalizeSubscriptionState(user);
+
+        long activePublications = publicationRepository.countByUserIdAndStatus(user.getId(), PublicationStatus.ACTIVE);
+        int allowedLimit = getPublicationLimitByPlan(user.getSubscriptionPlan());
 
         switch (user.getRole()) {
-            case USER:
-                if (activePublications >= 2) {
-                    throw new RuntimeException("USER role limit: maximum 2 active publications");
-                }
-                break;
-            case VENDEDOR:
-                if (activePublications >= 10) {
-                    throw new RuntimeException("VENDEDOR role limit: maximum 10 active publications");
-                }
-                break;
-            case PRO_SELLER:
-                // No limit for PRO_SELLER
-                break;
+            case ADMIN:
+            case MODERATOR:
+            case SUPER_ADMIN:
+                return;
             default:
-                // ADMIN, MODERATOR, SUPER_ADMIN have no limits
-                break;
+                if (allowedLimit != UNLIMITED_LIMIT && activePublications >= allowedLimit) {
+                    throw new RuntimeException(
+                            "Plan " + user.getSubscriptionPlan() + " limit reached: maximum " + allowedLimit
+                                    + " active publications. Upgrade your subscription to publish more.");
+                }
+        }
+
+        usuarioRepository.save(user);
+    }
+
+    private void normalizeSubscriptionState(Usuario user) {
+        SubscriptionPlan plan = user.getSubscriptionPlan();
+
+        if (plan == null || plan == SubscriptionPlan.FREE) {
+            user.setSubscriptionPlan(SubscriptionPlan.FREE);
+            if (user.getSubscriptionStatus() != SubscriptionStatus.CANCELLED) {
+                user.setSubscriptionStatus(SubscriptionStatus.NONE);
+            }
+            user.setSubscriptionStartDate(null);
+            user.setSubscriptionEndDate(null);
+            user.setGracePeriodEndDate(null);
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endDate = user.getSubscriptionEndDate();
+
+        if (endDate == null) {
+            user.setSubscriptionStatus(SubscriptionStatus.EXPIRED);
+            user.setSubscriptionPlan(SubscriptionPlan.FREE);
+            user.setSubscriptionStartDate(null);
+            user.setSubscriptionEndDate(null);
+            user.setGracePeriodEndDate(null);
+            return;
+        }
+
+        if (!now.isAfter(endDate)) {
+            user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+            user.setGracePeriodEndDate(null);
+            return;
+        }
+
+        LocalDateTime graceEnd = user.getGracePeriodEndDate();
+        if (graceEnd == null) {
+            graceEnd = endDate.plusDays(GRACE_DAYS);
+            user.setGracePeriodEndDate(graceEnd);
+        }
+
+        if (!now.isAfter(graceEnd)) {
+            user.setSubscriptionStatus(SubscriptionStatus.GRACE_PERIOD);
+            return;
+        }
+
+        user.setSubscriptionStatus(SubscriptionStatus.EXPIRED);
+        user.setSubscriptionPlan(SubscriptionPlan.FREE);
+        user.setSubscriptionStartDate(null);
+        user.setSubscriptionEndDate(null);
+        user.setGracePeriodEndDate(null);
+    }
+
+    private int getPublicationLimitByPlan(SubscriptionPlan plan) {
+        if (plan == null) {
+            return FREE_LIMIT;
+        }
+        switch (plan) {
+            case SELLER_BASIC:
+                return BASIC_LIMIT;
+            case SELLER_PRO:
+                return PRO_LIMIT;
+            case BUSINESS_UNLIMITED:
+                return UNLIMITED_LIMIT;
+            case FREE:
+            default:
+                return FREE_LIMIT;
         }
     }
 
