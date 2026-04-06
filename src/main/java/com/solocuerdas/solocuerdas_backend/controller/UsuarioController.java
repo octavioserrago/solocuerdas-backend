@@ -1,12 +1,16 @@
 package com.solocuerdas.solocuerdas_backend.controller;
 
+import com.solocuerdas.solocuerdas_backend.dto.CancelSubscriptionConflictResponse;
 import com.solocuerdas.solocuerdas_backend.dto.ChangePasswordRequest;
+import com.solocuerdas.solocuerdas_backend.dto.ConfirmCancelSubscriptionRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginResponse;
+import com.solocuerdas.solocuerdas_backend.dto.RegisterPushTokenRequest;
 import com.solocuerdas.solocuerdas_backend.dto.SubscriptionPlanOptionResponse;
 import com.solocuerdas.solocuerdas_backend.dto.SubscriptionResponse;
 import com.solocuerdas.solocuerdas_backend.dto.UpdateProfileRequest;
 import com.solocuerdas.solocuerdas_backend.dto.UpdateSubscriptionPlanRequest;
+import com.solocuerdas.solocuerdas_backend.exception.PublicationLimitConflictException;
 import com.solocuerdas.solocuerdas_backend.model.SubscriptionPlan;
 import com.solocuerdas.solocuerdas_backend.model.Usuario;
 import com.solocuerdas.solocuerdas_backend.service.UsuarioService;
@@ -237,6 +241,11 @@ public class UsuarioController {
     /**
      * CANCEL SUBSCRIPTION (downgrade to FREE)
      * POST /api/users/{id}/subscription/cancel
+     *
+     * If the user has more active publications than the FREE plan allows,
+     * returns HTTP 409 with a CancelSubscriptionConflictResponse listing all
+     * active publications. The frontend should present a selection modal and
+     * call POST /api/users/{id}/subscription/cancel/confirm with the chosen IDs.
      */
     @PostMapping("/{id}/subscription/cancel")
     public ResponseEntity<?> cancelSubscription(
@@ -246,6 +255,56 @@ public class UsuarioController {
             validateOwnerRequest(id, requesterId);
             SubscriptionResponse response = usuarioService.cancelSubscription(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (PublicationLimitConflictException e) {
+            CancelSubscriptionConflictResponse conflict = new CancelSubscriptionConflictResponse(
+                    e.getActivePublications(), e.getAllowedLimit());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(conflict);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * CONFIRM SUBSCRIPTION CANCELLATION WITH PUBLICATION DEACTIVATION
+     * POST /api/users/{id}/subscription/cancel/confirm
+     *
+     * Body: { "publicationIdsToDeactivate": [1, 3] }
+     * Deactivates (PAUSED) the selected publications and then cancels the
+     * subscription.
+     */
+    @PostMapping("/{id}/subscription/cancel/confirm")
+    public ResponseEntity<?> confirmCancelSubscription(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId,
+            @RequestBody ConfirmCancelSubscriptionRequest request) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            SubscriptionResponse response = usuarioService.confirmCancelSubscription(
+                    id, request.getPublicationIdsToDeactivate());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * REGISTER EXPO PUSH TOKEN
+     * POST /api/users/{id}/push-token
+     * Header: X-User-Id: {userId}
+     * Body: { "token": "ExponentPushToken[xxxx]" }
+     *
+     * Must be called by the frontend every time the app starts (token can rotate).
+     * Pass token: null to clear it (e.g. on logout).
+     */
+    @PostMapping("/{id}/push-token")
+    public ResponseEntity<?> registerPushToken(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId,
+            @RequestBody RegisterPushTokenRequest request) {
+        try {
+            validateOwnerRequest(id, requesterId);
+            usuarioService.registerPushToken(id, request.getToken());
+            return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
