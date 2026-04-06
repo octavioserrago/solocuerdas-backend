@@ -69,6 +69,28 @@ public class Usuario {
     @Column(name = "suspension_reason", length = 500)
     private String suspensionReason;
 
+    // ============ RATING FIELDS ============
+
+    @Column(name = "rating_as_seller", precision = 3, scale = 2)
+    private java.math.BigDecimal ratingAsSeller;
+
+    @Column(name = "rating_as_buyer", precision = 3, scale = 2)
+    private java.math.BigDecimal ratingAsBuyer;
+
+    @Column(name = "total_sales", nullable = false)
+    private Integer totalSales = 0;
+
+    @Column(name = "total_purchases", nullable = false)
+    private Integer totalPurchases = 0;
+
+    // Anti-fraud: block new inquiries if pending review exists
+    @Column(name = "has_pending_review", nullable = false)
+    private Boolean hasPendingReview = false;
+
+    // Expo push notification token (registered by the mobile app on login)
+    @Column(name = "expo_push_token", length = 200)
+    private String expoPushToken;
+
     // ============ SOFT DELETE FIELDS ============
 
     @Column(name = "is_deleted", nullable = false)
@@ -290,6 +312,54 @@ public class Usuario {
 
     public void setDeletionReason(String deletionReason) {
         this.deletionReason = deletionReason;
+    }
+
+    public String getExpoPushToken() {
+        return expoPushToken;
+    }
+
+    public void setExpoPushToken(String expoPushToken) {
+        this.expoPushToken = expoPushToken;
+    }
+
+    public java.math.BigDecimal getRatingAsSeller() {
+        return ratingAsSeller;
+    }
+
+    public void setRatingAsSeller(java.math.BigDecimal ratingAsSeller) {
+        this.ratingAsSeller = ratingAsSeller;
+    }
+
+    public java.math.BigDecimal getRatingAsBuyer() {
+        return ratingAsBuyer;
+    }
+
+    public void setRatingAsBuyer(java.math.BigDecimal ratingAsBuyer) {
+        this.ratingAsBuyer = ratingAsBuyer;
+    }
+
+    public Integer getTotalSales() {
+        return totalSales;
+    }
+
+    public void setTotalSales(Integer totalSales) {
+        this.totalSales = totalSales;
+    }
+
+    public Integer getTotalPurchases() {
+        return totalPurchases;
+    }
+
+    public void setTotalPurchases(Integer totalPurchases) {
+        this.totalPurchases = totalPurchases;
+    }
+
+    public Boolean getHasPendingReview() {
+        return hasPendingReview;
+    }
+
+    public void setHasPendingReview(Boolean hasPendingReview) {
+        this.hasPendingReview = hasPendingReview;
     }
 
     // ============ BUSINESS LOGIC METHODS ============

@@ -1,14 +1,21 @@
 package com.solocuerdas.solocuerdas_backend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solocuerdas.solocuerdas_backend.dto.ChangePasswordRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginRequest;
 import com.solocuerdas.solocuerdas_backend.dto.LoginResponse;
+import com.solocuerdas.solocuerdas_backend.dto.PublicationResponse;
 import com.solocuerdas.solocuerdas_backend.dto.SubscriptionPlanOptionResponse;
 import com.solocuerdas.solocuerdas_backend.dto.SubscriptionResponse;
 import com.solocuerdas.solocuerdas_backend.dto.UpdateProfileRequest;
+import com.solocuerdas.solocuerdas_backend.exception.PublicationLimitConflictException;
+import com.solocuerdas.solocuerdas_backend.model.Publication;
+import com.solocuerdas.solocuerdas_backend.model.PublicationStatus;
 import com.solocuerdas.solocuerdas_backend.model.SubscriptionPlan;
 import com.solocuerdas.solocuerdas_backend.model.SubscriptionStatus;
 import com.solocuerdas.solocuerdas_backend.model.Usuario;
+import com.solocuerdas.solocuerdas_backend.repository.PublicationRepository;
 import com.solocuerdas.solocuerdas_backend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,8 +23,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * SERVICE - Business logic layer
@@ -41,7 +50,12 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private PublicationRepository publicationRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * CREATE USER
@@ -240,10 +254,71 @@ public class UsuarioService {
 
     /**
      * CANCEL SUBSCRIPTION AND RETURN TO FREE PLAN
+     * If the user has more active publications than the FREE limit allows,
+     * throws PublicationLimitConflictException so the frontend can ask which
+     * publications to deactivate. Use confirmCancelSubscription() to proceed.
      */
     public SubscriptionResponse cancelSubscription(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        List<Publication> activePublications = publicationRepository
+                .findByUserAndStatus(usuario, PublicationStatus.ACTIVE);
+
+        if (activePublications.size() > FREE_LIMIT) {
+            List<PublicationResponse> dtos = activePublications.stream()
+                    .map(this::mapPublicationToResponse)
+                    .collect(Collectors.toList());
+            throw new PublicationLimitConflictException(dtos, FREE_LIMIT);
+        }
+
+        usuario.setSubscriptionPlan(SubscriptionPlan.FREE);
+        usuario.setSubscriptionStatus(SubscriptionStatus.CANCELLED);
+        usuario.setSubscriptionStartDate(null);
+        usuario.setSubscriptionEndDate(null);
+        usuario.setGracePeriodEndDate(null);
+
+        usuarioRepository.save(usuario);
+        return mapSubscriptionResponse(usuario);
+    }
+
+    /**
+     * CONFIRM SUBSCRIPTION CANCELLATION WITH PUBLICATION DEACTIVATION
+     * Deactivates the specified publications (sets them to PAUSED) and then
+     * cancels the subscription. The caller must provide enough IDs so that
+     * the remaining active count is within the FREE plan limit.
+     */
+    public SubscriptionResponse confirmCancelSubscription(Long id, List<Long> publicationIdsToDeactivate) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        if (publicationIdsToDeactivate == null || publicationIdsToDeactivate.isEmpty()) {
+            throw new RuntimeException("publicationIdsToDeactivate must not be empty");
+        }
+
+        long activeCount = publicationRepository.countByUserAndStatus(usuario, PublicationStatus.ACTIVE);
+        long remainingAfterDeactivation = activeCount - publicationIdsToDeactivate.size();
+
+        if (remainingAfterDeactivation > FREE_LIMIT) {
+            throw new RuntimeException(
+                    "Not enough publications selected for deactivation. "
+                            + "You need to deactivate at least " + (activeCount - FREE_LIMIT)
+                            + " publication(s), but only " + publicationIdsToDeactivate.size() + " were provided.");
+        }
+
+        for (Long pubId : publicationIdsToDeactivate) {
+            Publication publication = publicationRepository.findById(pubId)
+                    .orElseThrow(() -> new RuntimeException("Publication not found with id: " + pubId));
+
+            if (!publication.getUser().getId().equals(id)) {
+                throw new RuntimeException("Publication " + pubId + " does not belong to this user");
+            }
+
+            if (publication.getStatus() == PublicationStatus.ACTIVE) {
+                publication.setStatus(PublicationStatus.PAUSED);
+                publicationRepository.save(publication);
+            }
+        }
 
         usuario.setSubscriptionPlan(SubscriptionPlan.FREE);
         usuario.setSubscriptionStatus(SubscriptionStatus.CANCELLED);
@@ -280,6 +355,17 @@ public class UsuarioService {
                         UNLIMITED_LIMIT,
                         BigDecimal.valueOf(25),
                         "Business plan with unlimited active publications"));
+    }
+
+    /**
+     * REGISTER / UPDATE EXPO PUSH TOKEN
+     * Pass null to clear the token (e.g. on logout).
+     */
+    public void registerPushToken(Long id, String token) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        usuario.setExpoPushToken(token);
+        usuarioRepository.save(usuario);
     }
 
     /**
@@ -451,5 +537,35 @@ public class UsuarioService {
             default:
                 return BigDecimal.ZERO;
         }
+    }
+
+    private PublicationResponse mapPublicationToResponse(Publication publication) {
+        PublicationResponse response = new PublicationResponse();
+        response.setId(publication.getId());
+        response.setTitle(publication.getTitle());
+        response.setDescription(publication.getDescription());
+        response.setPrice(publication.getPrice());
+        response.setCategory(publication.getCategory());
+        response.setCondition(publication.getCondition());
+        response.setBrand(publication.getBrand());
+        response.setYear(publication.getYear());
+        response.setLocation(publication.getLocation());
+        response.setStatus(publication.getStatus());
+        response.setUserId(publication.getUser().getId());
+        response.setUserName(publication.getUser().getName());
+        response.setCreatedAt(publication.getCreatedAt());
+        response.setUpdatedAt(publication.getUpdatedAt());
+        response.setSoldAt(publication.getSoldAt());
+        response.setViewsCount(publication.getViewsCount());
+        try {
+            if (publication.getImages() != null) {
+                response.setImages(objectMapper.readValue(publication.getImages(),
+                        new TypeReference<List<String>>() {
+                        }));
+            }
+        } catch (Exception e) {
+            response.setImages(new ArrayList<>());
+        }
+        return response;
     }
 }
