@@ -49,6 +49,9 @@ public class Usuario {
     @Column(name = "grace_period_end_date")
     private LocalDateTime gracePeriodEndDate;
 
+    @Column(name = "extra_posts_purchased", nullable = false)
+    private Integer extraPostsPurchased = 0;
+
     // ============ ROLE AND PERMISSIONS ============
 
     @Enumerated(EnumType.STRING)
@@ -237,6 +240,14 @@ public class Usuario {
 
     public void setGracePeriodEndDate(LocalDateTime gracePeriodEndDate) {
         this.gracePeriodEndDate = gracePeriodEndDate;
+    }
+
+    public Integer getExtraPostsPurchased() {
+        return extraPostsPurchased;
+    }
+
+    public void setExtraPostsPurchased(Integer extraPostsPurchased) {
+        this.extraPostsPurchased = extraPostsPurchased;
     }
 
     // Role

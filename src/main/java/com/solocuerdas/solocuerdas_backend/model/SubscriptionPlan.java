@@ -6,22 +6,17 @@ package com.solocuerdas.solocuerdas_backend.model;
  */
 public enum SubscriptionPlan {
     /**
-     * FREE plan: up to 2 active publications.
+     * FREE plan: up to 3 active publications.
      */
     FREE,
 
     /**
-     * SELLER_BASIC plan: up to 10 active publications.
+     * HOBBY plan: up to 15 active publications. USD 5/month.
      */
-    SELLER_BASIC,
+    HOBBY,
 
     /**
-     * SELLER_PRO plan: up to 30 active publications.
+     * BUSINESS plan: unlimited active publications. USD 18/month.
      */
-    SELLER_PRO,
-
-    /**
-     * BUSINESS_UNLIMITED plan: unlimited active publications.
-     */
-    BUSINESS_UNLIMITED
+    BUSINESS
 }
