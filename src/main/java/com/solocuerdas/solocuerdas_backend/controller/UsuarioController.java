@@ -204,7 +204,7 @@ public class UsuarioController {
     /**
      * UPDATE USER SUBSCRIPTION PLAN
      * PUT /api/users/{id}/subscription/plan
-     * Body: { "plan": "SELLER_BASIC" } or "SELLER_PRO" or "FREE"
+     * Body: { "plan": "HOBBY" } or "BUSINESS" or "FREE"
      */
     @PutMapping("/{id}/subscription/plan")
     public ResponseEntity<?> updateSubscriptionPlan(

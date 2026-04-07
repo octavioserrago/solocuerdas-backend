@@ -15,25 +15,26 @@ Current auth model:
   - If mismatch, backend returns 400
 
 Business model:
-- FREE: max 2 ACTIVE publications, USD 0/month
-- SELLER_BASIC: max 10 ACTIVE publications, USD 5/month
-- SELLER_PRO: max 30 ACTIVE publications, USD 10/month
-- BUSINESS_UNLIMITED: unlimited ACTIVE publications, USD 25/month
+- FREE: max 3 ACTIVE publications, USD 0/month
+- Extra post slot: +1 publication, USD 1/month each (max suggested: 5 before recommending HOBBY)
+- HOBBY: max 15 ACTIVE publications, USD 5/month
+- BUSINESS: unlimited ACTIVE publications, USD 18/month
 - Paid plan duration: 1 month
 - Grace period: 5 days after paid plan expiration
 - After grace period: automatic downgrade to FREE
 
-Important rule:
+Important rules:
 - Publication limits apply to ACTIVE publications only.
 - Limit is validated both when creating a publication and when reactivating a publication to ACTIVE.
+- The real limit is: maxActivePosts = planLimit + extraPostsPurchased
+- extraPostsPurchased is a field on the user object (default 0). Future feature: users will be able to purchase extra slots.
 
 ## Enums and Contracts
 
 Plan values:
 - FREE
-- SELLER_BASIC
-- SELLER_PRO
-- BUSINESS_UNLIMITED
+- HOBBY
+- BUSINESS
 
 Subscription status values:
 - NONE: free user without active paid subscription
@@ -49,12 +50,12 @@ SubscriptionResponse:
 ```json
 {
   "userId": 2,
-  "plan": "SELLER_BASIC",
+  "plan": "HOBBY",
   "status": "ACTIVE",
-  "maxActivePublications": 10,
+  "maxActivePublications": 15,
   "monthlyPriceUsd": 5,
-  "subscriptionStartDate": "2026-04-04T20:00:00",
-  "subscriptionEndDate": "2026-05-04T20:00:00",
+  "subscriptionStartDate": "2026-04-06T20:00:00",
+  "subscriptionEndDate": "2026-05-06T20:00:00",
   "gracePeriodEndDate": null,
   "canCreateMorePublications": true
 }
@@ -63,6 +64,7 @@ SubscriptionResponse:
 Notes:
 - Dates are ISO-8601 LocalDateTime.
 - canCreateMorePublications currently returns true in backend response model; frontend should rely on publication-create errors for hard blocking.
+- maxActivePublications reflects planLimit only. To get the real limit, calculate: planLimit + user.extraPostsPurchased.
 
 ## Error Format
 
@@ -90,26 +92,20 @@ Success response (200):
 [
   {
     "plan": "FREE",
-    "maxActivePublications": 2,
+    "maxActivePublications": 3,
     "monthlyPriceUsd": 0,
-    "description": "Free plan with up to 2 active publications"
+    "description": "Free plan with up to 3 active publications"
   },
   {
-    "plan": "SELLER_BASIC",
-    "maxActivePublications": 10,
+    "plan": "HOBBY",
+    "maxActivePublications": 15,
     "monthlyPriceUsd": 5,
-    "description": "Basic seller plan with up to 10 active publications"
+    "description": "Hobby plan with up to 15 active publications"
   },
   {
-    "plan": "SELLER_PRO",
-    "maxActivePublications": 30,
-    "monthlyPriceUsd": 10,
-    "description": "Pro seller plan with up to 30 active publications"
-  },
-  {
-    "plan": "BUSINESS_UNLIMITED",
+    "plan": "BUSINESS",
     "maxActivePublications": -1,
-    "monthlyPriceUsd": 25,
+    "monthlyPriceUsd": 18,
     "description": "Business plan with unlimited active publications"
   }
 ]
@@ -152,15 +148,14 @@ Body:
 
 ```json
 {
-  "plan": "SELLER_BASIC"
+  "plan": "HOBBY"
 }
 ```
 
 Allowed plan values:
 - FREE
-- SELLER_BASIC
-- SELLER_PRO
-- BUSINESS_UNLIMITED
+- HOBBY
+- BUSINESS
 
 Success response (200):
 - SubscriptionResponse
@@ -170,7 +165,7 @@ Behavior:
   - Plan switches to FREE
   - Status becomes NONE
   - Paid dates are cleared
-- SELLER_BASIC / SELLER_PRO / BUSINESS_UNLIMITED:
+- HOBBY / BUSINESS:
   - Status becomes ACTIVE
   - Start date = now
   - End date = now + 1 month
@@ -238,8 +233,10 @@ Limit applies in these operations:
 If limit is reached, backend returns 400:
 
 ```text
-Error: Plan FREE limit reached: maximum 2 active publications. Upgrade your subscription to publish more.
+Error: Plan FREE limit reached: maximum 3 active publications. Upgrade your subscription to publish more.
 ```
+
+Note: the number in the message reflects planLimit + extraPostsPurchased, so it may be higher than 3 if the user has purchased extra slots.
 
 Frontend recommendation:
 - Catch this message and open paywall modal.
@@ -295,6 +292,7 @@ Limit reached modal title:
 
 Limit reached modal body:
 - Your current plan allows up to X active publications. Upgrade to publish more.
+- Note: X should be planLimit + extraPostsPurchased, not just planLimit.
 
 Success toast after upgrade:
 - Plan updated successfully. You can continue publishing.
@@ -314,31 +312,22 @@ curl "http://localhost:8080/api/users/2/subscription" \
   -H "X-User-Id: 2"
 ```
 
-Change plan to basic:
+Change plan to hobby:
 
 ```bash
 curl -X PUT "http://localhost:8080/api/users/2/subscription/plan" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: 2" \
-  -d '{"plan":"SELLER_BASIC"}'
+  -d '{"plan":"HOBBY"}'
 ```
 
-Change plan to pro:
+Change plan to business:
 
 ```bash
 curl -X PUT "http://localhost:8080/api/users/2/subscription/plan" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: 2" \
-  -d '{"plan":"SELLER_PRO"}'
-```
-
-Change plan to business unlimited:
-
-```bash
-curl -X PUT "http://localhost:8080/api/users/2/subscription/plan" \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: 2" \
-  -d '{"plan":"BUSINESS_UNLIMITED"}'
+  -d '{"plan":"BUSINESS"}'
 ```
 
 Downgrade to free:
@@ -383,3 +372,4 @@ If user can still exceed FREE limit:
 - Verify user really has plan FREE with GET /api/users/{id}/subscription.
 - Verify publications are ACTIVE (only ACTIVE counts).
 - Verify you restarted backend after latest changes.
+- Remember: effective limit is planLimit + extraPostsPurchased. If the user bought extra slots, the limit will be higher than 3.

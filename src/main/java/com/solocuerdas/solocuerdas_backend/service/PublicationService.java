@@ -37,9 +37,8 @@ public class PublicationService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int MAX_IMAGES = 5;
-    private static final int FREE_LIMIT = 2;
-    private static final int BASIC_LIMIT = 10;
-    private static final int PRO_LIMIT = 30;
+    private static final int FREE_LIMIT = 3;
+    private static final int HOBBY_LIMIT = 15;
     private static final int UNLIMITED_LIMIT = -1;
     private static final int GRACE_DAYS = 5;
 
@@ -316,7 +315,9 @@ public class PublicationService {
         normalizeSubscriptionState(user);
 
         long activePublications = publicationRepository.countByUserIdAndStatus(user.getId(), PublicationStatus.ACTIVE);
-        int allowedLimit = getPublicationLimitByPlan(user.getSubscriptionPlan());
+        int planLimit = getPublicationLimitByPlan(user.getSubscriptionPlan());
+        int extraPosts = user.getExtraPostsPurchased() != null ? user.getExtraPostsPurchased() : 0;
+        int allowedLimit = planLimit == UNLIMITED_LIMIT ? UNLIMITED_LIMIT : planLimit + extraPosts;
 
         switch (user.getRole()) {
             case ADMIN:
@@ -389,11 +390,9 @@ public class PublicationService {
             return FREE_LIMIT;
         }
         switch (plan) {
-            case SELLER_BASIC:
-                return BASIC_LIMIT;
-            case SELLER_PRO:
-                return PRO_LIMIT;
-            case BUSINESS_UNLIMITED:
+            case HOBBY:
+                return HOBBY_LIMIT;
+            case BUSINESS:
                 return UNLIMITED_LIMIT;
             case FREE:
             default:

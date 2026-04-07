@@ -40,9 +40,8 @@ import java.util.stream.Collectors;
 @Service
 public class UsuarioService {
 
-    private static final int FREE_LIMIT = 2;
-    private static final int BASIC_LIMIT = 10;
-    private static final int PRO_LIMIT = 30;
+    private static final int FREE_LIMIT = 3;
+    private static final int HOBBY_LIMIT = 15;
     private static final int UNLIMITED_LIMIT = -1;
     private static final int GRACE_DAYS = 5;
 
@@ -265,11 +264,14 @@ public class UsuarioService {
         List<Publication> activePublications = publicationRepository
                 .findByUserAndStatus(usuario, PublicationStatus.ACTIVE);
 
-        if (activePublications.size() > FREE_LIMIT) {
+        int extraPosts = usuario.getExtraPostsPurchased() != null ? usuario.getExtraPostsPurchased() : 0;
+        int freeAllowed = FREE_LIMIT + extraPosts;
+
+        if (activePublications.size() > freeAllowed) {
             List<PublicationResponse> dtos = activePublications.stream()
                     .map(this::mapPublicationToResponse)
                     .collect(Collectors.toList());
-            throw new PublicationLimitConflictException(dtos, FREE_LIMIT);
+            throw new PublicationLimitConflictException(dtos, freeAllowed);
         }
 
         usuario.setSubscriptionPlan(SubscriptionPlan.FREE);
@@ -298,11 +300,13 @@ public class UsuarioService {
 
         long activeCount = publicationRepository.countByUserAndStatus(usuario, PublicationStatus.ACTIVE);
         long remainingAfterDeactivation = activeCount - publicationIdsToDeactivate.size();
+        int extraPosts = usuario.getExtraPostsPurchased() != null ? usuario.getExtraPostsPurchased() : 0;
+        int freeAllowed = FREE_LIMIT + extraPosts;
 
-        if (remainingAfterDeactivation > FREE_LIMIT) {
+        if (remainingAfterDeactivation > freeAllowed) {
             throw new RuntimeException(
                     "Not enough publications selected for deactivation. "
-                            + "You need to deactivate at least " + (activeCount - FREE_LIMIT)
+                            + "You need to deactivate at least " + (activeCount - freeAllowed)
                             + " publication(s), but only " + publicationIdsToDeactivate.size() + " were provided.");
         }
 
@@ -339,21 +343,16 @@ public class UsuarioService {
                         SubscriptionPlan.FREE,
                         FREE_LIMIT,
                         BigDecimal.ZERO,
-                        "Free plan with up to 2 active publications"),
+                        "Free plan with up to 3 active publications"),
                 new SubscriptionPlanOptionResponse(
-                        SubscriptionPlan.SELLER_BASIC,
-                        BASIC_LIMIT,
+                        SubscriptionPlan.HOBBY,
+                        HOBBY_LIMIT,
                         BigDecimal.valueOf(5),
-                        "Basic seller plan with up to 10 active publications"),
+                        "Hobby plan with up to 15 active publications"),
                 new SubscriptionPlanOptionResponse(
-                        SubscriptionPlan.SELLER_PRO,
-                        PRO_LIMIT,
-                        BigDecimal.valueOf(10),
-                        "Pro seller plan with up to 30 active publications"),
-                new SubscriptionPlanOptionResponse(
-                        SubscriptionPlan.BUSINESS_UNLIMITED,
+                        SubscriptionPlan.BUSINESS,
                         UNLIMITED_LIMIT,
-                        BigDecimal.valueOf(25),
+                        BigDecimal.valueOf(18),
                         "Business plan with unlimited active publications"));
     }
 
@@ -507,18 +506,16 @@ public class UsuarioService {
 
     private Integer getPublicationLimitByPlan(SubscriptionPlan plan) {
         if (plan == null) {
-            return 2;
+            return FREE_LIMIT;
         }
         switch (plan) {
-            case SELLER_BASIC:
-                return 10;
-            case SELLER_PRO:
-                return 30;
-            case BUSINESS_UNLIMITED:
+            case HOBBY:
+                return HOBBY_LIMIT;
+            case BUSINESS:
                 return UNLIMITED_LIMIT;
             case FREE:
             default:
-                return 2;
+                return FREE_LIMIT;
         }
     }
 
@@ -527,12 +524,10 @@ public class UsuarioService {
             return BigDecimal.ZERO;
         }
         switch (plan) {
-            case SELLER_BASIC:
+            case HOBBY:
                 return BigDecimal.valueOf(5);
-            case SELLER_PRO:
-                return BigDecimal.valueOf(10);
-            case BUSINESS_UNLIMITED:
-                return BigDecimal.valueOf(25);
+            case BUSINESS:
+                return BigDecimal.valueOf(18);
             case FREE:
             default:
                 return BigDecimal.ZERO;
