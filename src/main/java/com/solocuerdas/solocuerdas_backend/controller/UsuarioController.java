@@ -43,12 +43,14 @@ public class UsuarioController {
     public ResponseEntity<?> createUser(@RequestBody Usuario usuario) {
         try {
             Usuario newUser = usuarioService.createUser(usuario);
-            // Return user without password
-            newUser.setPassword(null);
-            return new ResponseEntity<>(newUser, HttpStatus.CREATED); // 201
+            LoginResponse response = new LoginResponse(
+                    newUser.getId(), newUser.getName(), newUser.getEmail(),
+                    newUser.getPhone(), newUser.getRegistrationDate(), newUser.getRole(),
+                    newUser.getSubscriptionPlan(), newUser.getSubscriptionStatus(),
+                    newUser.getSubscriptionEndDate(), newUser.getIsSuspended(), newUser.getIsDeleted());
+            return new ResponseEntity<>(response, HttpStatus.CREATED); // 201
         } catch (RuntimeException e) {
-            // Return error message so we can see what's wrong
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -64,7 +66,7 @@ public class UsuarioController {
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Error: " + e.getMessage()); // 401
+                    .body(e.getMessage()); // 401
         }
     }
 
@@ -111,7 +113,7 @@ public class UsuarioController {
             LoginResponse updatedUser = usuarioService.updateUserProfile(id, updateRequest);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK); // 200
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -127,7 +129,7 @@ public class UsuarioController {
             usuarioService.changePassword(id, changePasswordRequest);
             return ResponseEntity.ok().body("Password changed successfully"); // 200
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -187,7 +189,7 @@ public class UsuarioController {
             SubscriptionResponse response = usuarioService.getSubscription(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -217,7 +219,7 @@ public class UsuarioController {
             SubscriptionResponse response = usuarioService.updateSubscriptionPlan(id, plan);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -234,7 +236,7 @@ public class UsuarioController {
             SubscriptionResponse response = usuarioService.renewSubscription(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -260,7 +262,7 @@ public class UsuarioController {
                     e.getActivePublications(), e.getAllowedLimit());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(conflict);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -283,7 +285,7 @@ public class UsuarioController {
                     id, request.getPublicationIdsToDeactivate());
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -306,7 +308,7 @@ public class UsuarioController {
             usuarioService.registerPushToken(id, request.getToken());
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

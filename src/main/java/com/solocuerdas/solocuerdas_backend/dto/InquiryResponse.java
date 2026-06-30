@@ -2,6 +2,7 @@ package com.solocuerdas.solocuerdas_backend.dto;
 
 import com.solocuerdas.solocuerdas_backend.model.InquiryStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class InquiryResponse {
@@ -13,6 +14,7 @@ public class InquiryResponse {
     private String sellerName;
     private Long publicationId;
     private String publicationTitle;
+    private BigDecimal publicationPrice;
     private String message;
     private InquiryStatus status;
     private LocalDateTime createdAt;
@@ -73,6 +75,14 @@ public class InquiryResponse {
 
     public void setPublicationTitle(String publicationTitle) {
         this.publicationTitle = publicationTitle;
+    }
+
+    public BigDecimal getPublicationPrice() {
+        return publicationPrice;
+    }
+
+    public void setPublicationPrice(BigDecimal publicationPrice) {
+        this.publicationPrice = publicationPrice;
     }
 
     public String getMessage() {

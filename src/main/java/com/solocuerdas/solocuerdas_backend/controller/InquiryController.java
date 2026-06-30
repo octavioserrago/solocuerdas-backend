@@ -37,7 +37,7 @@ public class InquiryController {
             InquiryResponse response = inquiryService.createInquiry(buyerId, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -53,7 +53,7 @@ public class InquiryController {
             InquiryResponse response = inquiryService.getInquiry(id, requesterId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -68,7 +68,7 @@ public class InquiryController {
             List<InquiryResponse> response = inquiryService.getBuyerInquiries(buyerId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -83,7 +83,7 @@ public class InquiryController {
             List<InquiryResponse> response = inquiryService.getSellerInquiries(sellerId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -99,7 +99,7 @@ public class InquiryController {
             InquiryResponse response = inquiryService.respondToInquiry(id, sellerId, InquiryStatus.ACCEPTED);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -115,7 +115,7 @@ public class InquiryController {
             InquiryResponse response = inquiryService.respondToInquiry(id, sellerId, InquiryStatus.REJECTED);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -131,7 +131,7 @@ public class InquiryController {
             InquiryResponse response = inquiryService.cancelInquiry(id, buyerId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

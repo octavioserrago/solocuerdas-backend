@@ -187,6 +187,28 @@ public class TransactionService {
     }
 
     /**
+     * GET TRANSACTION BY TRANSACTION ID
+     */
+    public TransactionResponse getById(Long transactionId, Long requesterId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        if (!transaction.getBuyer().getId().equals(requesterId) &&
+                !transaction.getSeller().getId().equals(requesterId)) {
+            throw new RuntimeException("Access denied.");
+        }
+
+        TransactionResponse response = mapToResponse(transaction);
+
+        if (transaction.getSeller().getId().equals(requesterId)
+                && transaction.getStatus() == TransactionStatus.AWAITING_BUYER_CODE) {
+            response.setConfirmationCode(transaction.getConfirmationCode());
+        }
+
+        return response;
+    }
+
+    /**
      * GET TRANSACTION BY INQUIRY ID
      */
     public TransactionResponse getByInquiry(Long inquiryId, Long requesterId) {

@@ -212,6 +212,7 @@ public class InquiryService {
         r.setSellerName(inquiry.getSeller().getName());
         r.setPublicationId(inquiry.getPublication().getId());
         r.setPublicationTitle(inquiry.getPublication().getTitle());
+        r.setPublicationPrice(inquiry.getPublication().getPrice());
         r.setMessage(inquiry.getMessage());
         r.setStatus(inquiry.getStatus());
         r.setCreatedAt(inquiry.getCreatedAt());

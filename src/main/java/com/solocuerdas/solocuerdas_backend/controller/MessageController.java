@@ -37,7 +37,7 @@ public class MessageController {
             MessageResponse response = messageService.sendMessage(inquiryId, senderId, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class MessageController {
             List<MessageResponse> response = messageService.getMessages(inquiryId, requesterId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

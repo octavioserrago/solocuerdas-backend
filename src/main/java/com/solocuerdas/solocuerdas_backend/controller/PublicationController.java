@@ -45,7 +45,7 @@ public class PublicationController {
             PublicationResponse response = publicationService.createPublication(request, userId);
             return new ResponseEntity<>(response, HttpStatus.CREATED); // 201
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -70,7 +70,7 @@ public class PublicationController {
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: " + e.getMessage()); // 404
+                    .body(e.getMessage()); // 404
         }
     }
 
@@ -89,7 +89,7 @@ public class PublicationController {
             PublicationResponse response = publicationService.updatePublication(id, request, userId);
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -106,7 +106,7 @@ public class PublicationController {
             publicationService.deletePublication(id, userId);
             return ResponseEntity.ok("Publication deleted successfully"); // 200
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -135,7 +135,7 @@ public class PublicationController {
             FavoriteStatusResponse response = favoriteService.addToFavorites(id, userId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -152,7 +152,7 @@ public class PublicationController {
             FavoriteStatusResponse response = favoriteService.removeFromFavorites(id, userId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -169,7 +169,7 @@ public class PublicationController {
             FavoriteStatusResponse response = favoriteService.getFavoriteStatus(id, userId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -186,7 +186,7 @@ public class PublicationController {
             FavoriteStatusResponse response = favoriteService.toggleFavorite(id, userId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -201,7 +201,7 @@ public class PublicationController {
             List<PublicationResponse> favorites = favoriteService.getMyFavorites(userId);
             return new ResponseEntity<>(favorites, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -230,7 +230,7 @@ public class PublicationController {
             PublicationResponse response = publicationService.changeStatus(id, status, userId);
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -249,7 +249,7 @@ public class PublicationController {
             PublicationResponse response = publicationService.uploadImages(id, files, userId);
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -268,7 +268,7 @@ public class PublicationController {
             PublicationResponse response = publicationService.deleteImage(id, imageUrl, userId);
             return new ResponseEntity<>(response, HttpStatus.OK); // 200
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

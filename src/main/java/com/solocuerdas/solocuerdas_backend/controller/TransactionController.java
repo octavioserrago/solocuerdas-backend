@@ -49,7 +49,7 @@ public class TransactionController {
             TransactionResponse response = transactionService.initiateTransaction(inquiryId, sellerId, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class TransactionController {
             TransactionResponse response = transactionService.getByInquiry(inquiryId, requesterId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -89,7 +89,24 @@ public class TransactionController {
                     transactionId, buyerId, request.getConfirmationCode());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * GET TRANSACTION BY ID (buyer or seller)
+     * GET /api/transactions/{transactionId}
+     * Header: X-User-Id: <requesterId>
+     */
+    @GetMapping("/api/transactions/{transactionId}")
+    public ResponseEntity<?> getById(
+            @PathVariable Long transactionId,
+            @RequestHeader("X-User-Id") Long requesterId) {
+        try {
+            TransactionResponse response = transactionService.getById(transactionId, requesterId);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -106,7 +123,7 @@ public class TransactionController {
             TransactionResponse response = transactionService.cancelTransaction(transactionId, sellerId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
